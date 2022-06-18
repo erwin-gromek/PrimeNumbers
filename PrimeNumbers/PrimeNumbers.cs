@@ -12,7 +12,6 @@ namespace PrimeNumbers
     internal class PrimeNumbers
     {
         List<int> Prime = new List<int>();
-        XmlDocument doc = new XmlDocument();
         System.Timers.Timer timer = new System.Timers.Timer();
         int number = 1;
         int cycle = 0;
@@ -22,14 +21,10 @@ namespace PrimeNumbers
         bool firstCycle = true;
         public void Start()
         {
-            try
+            if(File.Exists("data.xml"))
             {
                 XDocument xdoc = XDocument.Load("data.xml");
-                number = int.Parse(xdoc.Descendants("value").First().Value);
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception.ToString());
+                number = int.Parse(xdoc.Descendants("value").Last().Value);
             }
             stop = false;
             timer.Interval = 100;
@@ -41,7 +36,7 @@ namespace PrimeNumbers
                 firstCycle = false;
             }
         }
-        public void Count(object source, System.Timers.ElapsedEventArgs e)
+        public void Count(object source, ElapsedEventArgs e)
         {
             timer.Stop();
             start = DateTime.Now;
@@ -61,10 +56,6 @@ namespace PrimeNumbers
                 {
                     Prime.Add(number);
                 }
-                /*if (stop)
-                {
-                    break;
-                }*/
                 try { number++; } 
                 catch(Exception exception)
                 {
@@ -72,11 +63,25 @@ namespace PrimeNumbers
                 }
             }
             cycle++;
-            doc.LoadXml($"<number><value>{Prime.Last()}</value><cycleNumber>{cycle}</cycleNumber><cycleTime>{DateTime.Now.Subtract(start)}</cycleTime><countingTime>{DateTime.Now.Subtract(time)}</countingTime></number>");
-            try { doc.Save("data.xml"); }
-            catch (Exception exception)
+            if (File.Exists("data.xml")) { 
+                XDocument doc = XDocument.Load("data.xml");
+                doc.Element("number").Add(new XElement("value", Prime.Last()),
+                    new XElement("cycleNumber", cycle),
+                    new XElement("cycleTime", DateTime.Now.Subtract(start).ToString()),
+                    new XElement("countingTime", DateTime.Now.Subtract(time).ToString())
+                    );
+                doc.Save("data.xml");
+            }
+            else
             {
-                Console.WriteLine(exception.ToString());
+                XDocument doc = new XDocument(
+                new XElement("number",
+                    new XElement("value", Prime.Last()),
+                    new XElement("cycleNumber", cycle),
+                    new XElement("cycleTime", DateTime.Now.Subtract(start).ToString()),
+                    new XElement("countingTime", DateTime.Now.Subtract(time).ToString())
+                    ));
+                doc.Save("data.xml");
             }
             if(!stop)
                 timer.Start();
@@ -92,7 +97,7 @@ namespace PrimeNumbers
             try
             {
                 XDocument xdoc = XDocument.Load("data.xml");
-                string[] strings = { xdoc.Descendants("value").First().Value, xdoc.Descendants("cycleNumber").First().Value, xdoc.Descendants("cycleTime").First().Value, xdoc.Descendants("countingTime").First().Value };
+                string[] strings = { xdoc.Descendants("value").Last().Value, xdoc.Descendants("cycleNumber").Last().Value, xdoc.Descendants("cycleTime").Last().Value, xdoc.Descendants("countingTime").Last().Value };
                 return strings;
             }
             catch (Exception exception)
